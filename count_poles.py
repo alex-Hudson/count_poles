@@ -19,14 +19,26 @@ print(args.db_name, args.json_file)
 
 
 def main():
+    #from globals import Session
+    import globals
+
+    # Read polygons (and error check)
+
+
+    # Open database
     engine = sqlalchemy.create_engine('postgresql://postgres:Ubi2011sense@localhost:5432/{db_name}'.format(db_name=args.db_name))
-
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
+    globals.Session = sessionmaker(bind=engine)()
+    print globals.Session
+    # import models
     from pole import Pole
 
-    for record in session.query(Pole):
-        print(record)
+    # for each polygon
+        # count poles inside polygon 
+
+    # print results
+
+
+    for rec in globals.Session.query(Pole):
+        print rec.id, rec.telco_pole_tag
 
 main()
