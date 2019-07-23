@@ -11,6 +11,10 @@ import shapely
 from shapely.geometry import shape
 
 def main():
+    ##
+    # tests number of poles for CB24 gas supply area, when read from file and when read from gas_supply_area table in database
+    ##
+
     import globals
 
     # Read polygons (and error check)
