@@ -5,6 +5,7 @@ from sqlalchemy import inspect
 from sqlalchemy.orm import sessionmaker
 import argparse
 import sys
+import json
 
 
 # Define signature
@@ -23,6 +24,12 @@ def main():
     import globals
 
     # Read polygons (and error check)
+    try:
+        with open(args.json_file) as json_file:
+            polygon_geom = json.load(json_file)
+    except:
+        print 'error reading from file'
+        raise IOError
 
 
     # Open database
@@ -39,6 +46,6 @@ def main():
 
 
     for rec in globals.Session.query(Pole):
-        print rec.id, rec.telco_pole_tag
+        print rec.id, rec.telco_pole_tag, rec.the_geom
 
 main()
