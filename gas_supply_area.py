@@ -9,11 +9,15 @@ class GasSupplyArea(Base):
         'autoload': True,
         'autoload_with': Session.bind 
     }
- 
+    
     def __repr__(self):
-        return "Gas_supply_area(id={})".format(self.name)
+        ## string representation of self
+        return "{}(id={})".format(self.__class__.name, self.name)
 
-    def n_poles(self):
-        pred = Pole.the_geom.ST_CoveredBy(self.boundary)
-        return int(Session.query(Pole).filter( pred ).count()) # only get poles contained by current polygon
+    def n_within(self,model):
+        ## number of features of type model within self's boundary
+        ##
+        ## MODEL must have a geometry field called the_geom 
+        pred = model.the_geom.ST_CoveredBy(self.boundary)
+        return int( Session.query(model).filter( pred ).count() )
         

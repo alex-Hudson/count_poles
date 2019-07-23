@@ -42,11 +42,12 @@ def main():
 
     supply_areas = globals.Session.query(GasSupplyArea)
     
-    results = {}
     # for each polygon count poles inside
+    results = {}
     for supply_area in supply_areas:
-        results[supply_area.name] = supply_area.n_poles()
+        results[supply_area.name] = supply_area.n_within(Pole)
 
+    # print results
     print 'polygon\tpoles\n-------\t-----'
     for k,n_poles in results.iteritems():
         print '{}\t{}'.format(k, n_poles)
