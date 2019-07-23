@@ -6,7 +6,9 @@ from sqlalchemy.orm import sessionmaker
 import argparse
 import sys
 import json
-
+import geoalchemy2
+import shapely
+from shapely.geometry import shape
 
 # Define signature
 arg_parser = argparse.ArgumentParser(add_help=False)
@@ -26,26 +28,47 @@ def main():
     # Read polygons (and error check)
     try:
         with open(args.json_file) as json_file:
-            polygon_geom = json.load(json_file)
-    except:
-        print 'error reading from file'
-        raise IOError
+            polygon_geoms = json.load(json_file)
+    except error as cond:
+        print 'error reading from file:',cond
+        exit(1)
 
 
     # Open database
     engine = sqlalchemy.create_engine('postgresql://postgres:Ubi2011sense@localhost:5432/{db_name}'.format(db_name=args.db_name))
     globals.Session = sessionmaker(bind=engine)()
-    print globals.Session
+
     # import models
     from pole import Pole
 
+    results = {}
     # for each polygon
-        # count poles inside polygon 
+    for name,poly_json in polygon_geoms.iteritems():
+        poly = shape(poly_json)
+        
+        # For each pole ... check if it is inside inside polygon
+        n_poles = 0
+        
+        for rec in globals.Session.query(Pole):
 
-    # print results
+            # Get geom as shapely
+            pnt = geoalchemy2.shape.to_shape( rec.the_geom )
+
+            # Do test
+            if poly.contains(pnt):
+                
+                n_poles += 1
+        
+        results[name] = {}
+        results[name]['n_poles'] = n_poles
 
 
-    for rec in globals.Session.query(Pole):
-        print rec.id, rec.telco_pole_tag, rec.the_geom
+    print 'polygon\tpoles\n-------\t-----'
+    for k,v in results.iteritems():
+        print '{}\t{}'.format(k, v['n_poles'])
+
+
+
+    
 
 main()

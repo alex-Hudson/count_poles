@@ -11,7 +11,7 @@
         "program": "${file}",
         "console": "integratedTerminal",
         "externalConsole": true,
-        "args": ["myw_dev", "unused_at_the_moment"]
+        "args": ["myw_dev", "polygons.json"]
       }
     ]
   }
