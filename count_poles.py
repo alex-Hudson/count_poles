@@ -21,7 +21,6 @@ args = arg_parser.parse_args(sys.argv[1:])
 
 
 def main():
-    #from globals import Session
     import globals
 
     # Read polygons (and error check)
@@ -39,27 +38,18 @@ def main():
 
     # import models
     from pole import Pole
+    from gas_supply_area import GasSupplyArea
 
+    supply_areas = globals.Session.query(GasSupplyArea)
+    
     results = {}
-    # for each polygon
-    for name,poly_json in polygon_geoms.iteritems():
-        poly = shape(poly_json)
-        
-        # For each pole ... check if it is inside inside polygon
-        n_poles = 0
-        poly_wkb_el = geoalchemy2.shape.from_shape(poly,srid=4326)
-        n_poles = globals.Session.query(Pole).filter( Pole.the_geom.ST_CoveredBy(poly_wkb_el) ).count() # only get poles contained by current polygon
-        
-        results[name] = {}
-        results[name]['n_poles'] = n_poles
-
+    # for each polygon count poles inside
+    for supply_area in supply_areas:
+        results[supply_area.name] = supply_area.n_poles()
 
     print 'polygon\tpoles\n-------\t-----'
-    for k,v in results.iteritems():
-        print '{}\t{}'.format(k, v['n_poles'])
+    for k,n_poles in results.iteritems():
+        print '{}\t{}'.format(k, n_poles)
 
-
-
-    
 
 main()
