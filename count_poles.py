@@ -18,7 +18,6 @@ arg_parser.add_argument('json_file', type=str, help="GeoJSPON polygons keyed by 
 
 # Parse command line
 args = arg_parser.parse_args(sys.argv[1:])
-print(args.db_name, args.json_file)
 
 
 def main():
@@ -29,7 +28,7 @@ def main():
     try:
         with open(args.json_file) as json_file:
             polygon_geoms = json.load(json_file)
-    except error as cond:
+    except IOError as cond:
         print 'error reading from file:',cond
         exit(1)
 
@@ -48,16 +47,8 @@ def main():
         
         # For each pole ... check if it is inside inside polygon
         n_poles = 0
-        
-        for rec in globals.Session.query(Pole):
-
-            # Get geom as shapely
-            pnt = geoalchemy2.shape.to_shape( rec.the_geom )
-
-            # Do test
-            if poly.contains(pnt):
-                
-                n_poles += 1
+        poly_wkb_el = geoalchemy2.shape.from_shape(poly,srid=4326)
+        n_poles = globals.Session.query(Pole).filter( Pole.the_geom.ST_CoveredBy(poly_wkb_el) ).count() # only get poles contained by current polygon
         
         results[name] = {}
         results[name]['n_poles'] = n_poles

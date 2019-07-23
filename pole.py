@@ -10,9 +10,6 @@ class Pole(Base):
         'autoload': True,
         'autoload_with': Session.bind 
     }
-
-    the_geom = Column(Geometry('POLYGON'))
-
  
     def __repr__(self):
         return "Pole(id={})".format(self.id)
