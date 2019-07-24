@@ -5,6 +5,7 @@ import geoalchemy2
 from shapely.geometry import shape
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
+import pandas as pd
 
 
 
@@ -15,7 +16,7 @@ def main():
     ##
 
     # Format args
-    (db_name, poly_file, feature_type) = sys.argv[-3:]
+    (db_name, poly_file, feature_type_spec) = sys.argv[-3:]
 
     # Open Session
     engine = sqlalchemy.create_engine('postgresql://postgres:Ubi2011sense@localhost:5432/{db_name}'.format(db_name=db_name))
@@ -29,35 +30,56 @@ def main():
         print 'error reading from file:',cond
         exit(1)
     
-    # Get name of column with geom
-    model = db.dd.featureModel(feature_type)
-    for column in  model.__table__.c:
-        if 'geometry' in str(column.type):
-            geom_col_name = column.name
+    # Get feature types
+    feature_types = []
+    for feature_type in db.dd.featureTypes('myworld', feature_type_spec):
+        feature_types.append(feature_type)
 
-    # if no column with geometry is found, set column to None
-    try: geom_col_name
-    except NameError: geom_col_name = None
-    
-    # for each polygon count poles inside
+    # Get models with geom
+    models = []
+    for feature_type in feature_types:
+        model = db.dd.featureModel(feature_type)
+        if not model._descriptor.primary_geom_field:
+            print 'no geometry field'
+            continue
+        models.append(model)
+
+    # for each polygon count features inside
     results = {}
-    for name,polygon_json in polygon_geoms.iteritems():
-        n_features=0
-        if geom_col_name is not None:
-            poly = shape(polygon_json)
+    for model in models:
+        model_name    = model._descriptor.name
+        results[model_name] = {}
+        poly_results = {}
+        for name,polygon_json in polygon_geoms.items():
+            poly        = shape(polygon_json)
             poly_wkb_el = geoalchemy2.shape.from_shape(poly,srid=4326)
-            geom_col = getattr(model, geom_col_name)
-            pred = geom_col.ST_CoveredBy(poly_wkb_el)
-            results[name] = int(Session.query(model).filter( pred ).count())
-        else:
-            results[name] = n_features
+            geom_col      = getattr(model,model._descriptor.primary_geom_field.name)
+            pred          = geom_col.ST_CoveredBy(poly_wkb_el)
+            poly_results[name] = int(Session.query(model).filter( pred ).count())
+        results[model_name].update(poly_results)
+    
+    # print results         
+    feature_ids = []
+    frames = []
+    for feature_id, d in results.items():
+        feature_ids.append(feature_id)
+        frames.append(pd.DataFrame.from_dict(d, orient='index'))
 
-    # print results
-    width = len(feature_type)
-    print 'polygon\t{feature_type}'.format(feature_type=feature_type)
-    print '-------\t{:{fill}{align}{width}}'.format('',fill='-',align='<',width=width)
-    for k,n_poles in results.iteritems():
-        print '{}\t{}'.format(k, n_poles)
+    df = pd.concat(frames, axis = 1).T.drop_duplicates().T
+    df.columns = feature_types
+
+    print df
+
+    # exit()
+
+    # # print results
+    # for model in models:
+    #     model_name = model._descriptor.name
+    #     width = len(model_name)
+    #     print 'polygon\t{feature_type}'.format(feature_type=model_name)
+    #     print '-------\t{:{fill}{align}{width}}'.format('',fill='-',align='<',width=width)
+    #     for k,n_features in results[model_name].items():
+    #         print '{}\t{}'.format(k, n_features)
 
 
 main()
