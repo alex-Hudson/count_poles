@@ -35,7 +35,7 @@ def main():
         if 'geometry' in str(column.type):
             geom_col_name = column.name
 
-    # if no column with geometry is found, set column to none
+    # if no column with geometry is found, set column to None
     try: geom_col_name
     except NameError: geom_col_name = None
     
@@ -53,7 +53,9 @@ def main():
             results[name] = n_features
 
     # print results
-    print 'polygon\tpoles\n-------\t-----'
+    width = len(feature_type)
+    print 'polygon\t{feature_type}'.format(feature_type=feature_type)
+    print '-------\t{:{fill}{align}{width}}'.format('',fill='-',align='<',width=width)
     for k,n_poles in results.iteritems():
         print '{}\t{}'.format(k, n_poles)
 
