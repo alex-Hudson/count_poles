@@ -9,4 +9,4 @@ if "%~3"=="" (
     exit /b 1
 )
 
-call myw_db %1 run %~dpn0.py %2 %3
+call myw_db %1 run %~dpn0.py %1 %2 %3
