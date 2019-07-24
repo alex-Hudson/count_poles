@@ -34,16 +34,23 @@ def main():
     for column in  model.__table__.c:
         if 'geometry' in str(column.type):
             geom_col_name = column.name
+
+    # if no column with geometry is found, set column to none
+    try: geom_col_name
+    except NameError: geom_col_name = None
     
     # for each polygon count poles inside
     results = {}
     for name,polygon_json in polygon_geoms.iteritems():
-        n_poles=0
-        poly = shape(polygon_json)
-        poly_wkb_el = geoalchemy2.shape.from_shape(poly,srid=4326)
-        geom_col = getattr(model, geom_col_name)
-        pred = geom_col.ST_CoveredBy(poly_wkb_el)
-        results[name] = int(Session.query(model).filter( pred ).count())
+        n_features=0
+        if geom_col_name is not None:
+            poly = shape(polygon_json)
+            poly_wkb_el = geoalchemy2.shape.from_shape(poly,srid=4326)
+            geom_col = getattr(model, geom_col_name)
+            pred = geom_col.ST_CoveredBy(poly_wkb_el)
+            results[name] = int(Session.query(model).filter( pred ).count())
+        else:
+            results[name] = n_features
 
     # print results
     print 'polygon\tpoles\n-------\t-----'
