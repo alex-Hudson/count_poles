@@ -30,20 +30,21 @@ def main():
         print 'error reading from file:',cond
         exit(1)
     
-    # Get feature types
+    # Get feature types and models without geometry
     feature_types = []
-    for feature_type in db.dd.featureTypes('myworld', feature_type_spec):
-        feature_types.append(feature_type)
-
-    # Get models with geom
     models = []
-    for feature_type in feature_types:
+    for feature_type in db.dd.featureTypes('myworld', feature_type_spec):
         model = db.dd.featureModel(feature_type)
         if not model._descriptor.primary_geom_field:
             print 'no geometry field'
             continue
         models.append(model)
-
+        feature_types.append(feature_type)     
+    
+    if not feature_types:
+        print 'no features'
+        exit(1)
+        
     # for each polygon count features inside
     results = {}
     for model in models:
